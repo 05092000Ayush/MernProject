@@ -1,0 +1,81 @@
+const express = require('express');
+const jwt = require("jsonwebtoken");
+const bodyParser = require('body-parser');
+const { Sequelize, DataTypes } = require('sequelize');
+
+const app = express();
+app.use(bodyParser.json());
+
+// Middleware to enable CORS
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS'); // Allow specified methods
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allow specified headers
+  next();
+});
+
+const sequelize = new Sequelize('backdb', 'root', 'Ayush@@0509', {
+  host: 'localhost',
+  dialect: 'mysql',
+  logging: false
+});
+
+sequelize.authenticate()
+  .then(() => {
+    console.log('Connection to database has been established successfully.');
+  })
+  .catch(err => {
+    console.error('Unable to connect to the database:', err);
+  });
+
+const User = sequelize.define('User', {
+  firstName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  lastName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false
+  }
+}, {
+  timestamps: false,
+  tableName: 'user'
+});
+
+// Login endpoint
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    // Find user by email
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Perform password validation here (compare hashed passwords)
+    if (user.password !== password) {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+    
+    // Password is correct, generate JWT token
+    const token = jwt.sign({ userId: user.id }, 'secretKey', { expiresIn: '1h' });
+    res.json({ token });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
