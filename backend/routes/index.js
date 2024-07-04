@@ -17,6 +17,8 @@ router.post('/users', authController.userDetail)
 //fetch user details
 router.get('/user-details', authController.getUserDetails)
 
-router.delete('/userdelete/"id', authController.deleteUser)
+router.delete('/userdelete/:id', authController.deleteUser);
+
+router.put('/useredit/:id', authController.updateUser);
 
 module.exports = router;
