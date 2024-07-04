@@ -144,30 +144,51 @@ module.exports = {
   },
   async getUserDetails(req, res) {
     try {
-      const userDetails = await UserDetails.findAll({where:{isActive:true}});
+      const userDetails = await UserDetails.findAll({ where: { isActive: true } });
       res.status(200).json(userDetails);
     } catch (error) {
       console.error('Error fetching user details:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
-  
-  async deleteUser(req,res){
-    const userId = req.body.id; // Ensure req.body.id exists and is properly formatted
 
-  try {
-    // Find user by ID and delete
-    const user = await UserDetails.findByPk(userId); // Assuming UserDetails has a primary key 'id'
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+  async deleteUser(req, res) {
+    const userId = req.params.id; // Extract user ID from URL parameters
+
+    try {
+      // Find user by ID and delete
+      const user = await UserDetails.findByPk(userId); // Assuming UserDetails has a primary key 'id'
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      await user.destroy();
+      res.status(204).end(); // Respond with no content on successful deletion
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
+  },
+  async updateUser(req, res) {
+    const userId = req.params.id;
+    const { firstName, lastName, email } = req.body;
 
-    await user.destroy();
-    res.status(204).end(); // Respond with no content on successful deletion
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    try {
+      const user = await UserDetails.findByPk(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      user.firstName = firstName;
+      user.lastName = lastName;
+      user.email = email;
+      await user.save();
+
+      res.json(user);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
-}
 
 };
